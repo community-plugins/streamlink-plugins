@@ -52,6 +52,6 @@ class Stripchat(Plugin):
                     yield s
             except IOError as err:
                 stream = HLSStream(self.session, server0)
-                yield "Auto", stream
+                yield "default", stream
 
 __plugin__ = Stripchat
