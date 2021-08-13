@@ -10,6 +10,7 @@ _post_schema = validate.Schema(
     {
         "cam": validate.Schema({
                     'streamName' : validate.text,
+                    'topic' : validate.text,
                     'viewServers': validate.Schema({'flashphoner-hls': validate.text})
         }),
         "user": validate.Schema({
@@ -17,7 +18,7 @@ _post_schema = validate.Schema(
                                 'status' : validate.text,
                                 'isLive' : bool
                     })
-        })    
+        })
     }
 )
 
@@ -26,6 +27,15 @@ class Stripchat(Plugin):
     @classmethod
     def can_handle_url(cls, url):
         return _url_re.match(url)
+
+    def get_title(self):
+        return self.title
+
+    def get_author(self):
+        return self.author
+
+    def get_category(self):
+        return "Live"
 
     def _get_streams(self):
         match = _url_re.match(self.url)
@@ -39,6 +49,13 @@ class Stripchat(Plugin):
 
         res = self.session.http.get(api_call, headers=headers)
         data = self.session.http.json(res, schema=_post_schema)
+
+        if not data:
+            self.logger.info("Not a valid url.")
+            return
+
+        self.author = username
+        self.title = data["cam"]["topic"]
 
         server = "https://b-{0}.strpst.com/hls/{1}/master_{1}.m3u8".format(data["cam"]["viewServers"]["flashphoner-hls"],data["cam"]["streamName"])
 
