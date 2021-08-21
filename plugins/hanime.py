@@ -1,35 +1,30 @@
 import re
 
-from streamlink.plugin import Plugin
+from streamlink.plugin import Plugin, pluginmatcher
 from streamlink.plugin.api import validate
 from streamlink.stream import HLSStream
 
-_url_re = re.compile(r"https?://hanime\.tv/videos/hentai/(?P<videoid>[a-zA-Z0-9_-]+)")
-
 _post_schema = validate.Schema({
         'hentai_video': validate.Schema({
-                'name': validate.text,
-                'is_visible': bool
+            'name': validate.text,
+            'is_visible': bool
             }),
         'videos_manifest': validate.Schema({
-                 'servers': validate.Schema([{
-                     'streams': validate.Schema([{
-                            'height': validate.text,
-                            'url': validate.text,
-                            'id': int,
-                     }])
-                 }])
-            }),
+            'servers': validate.Schema([{
+                'streams': validate.Schema([{
+                    'height': validate.text,
+                    'url': validate.text,
+                    'id': int
+                }])
+            }])
+        }),
 })
 
-author = None
-category = None
-title = None
+@pluginmatcher(re.compile(
+    r"https?://hanime\.tv/videos/hentai/(?P<videoid>[a-zA-Z0-9_-]+)"
+))
 
-class Piped(Plugin):
-    @classmethod
-    def can_handle_url(cls, url):
-        return _url_re.match(url)
+class hanimetv(Plugin):
 
     def get_title(self):
         return self.title
@@ -41,8 +36,8 @@ class Piped(Plugin):
         return "VOD"
 
     def _get_streams(self):
-        match = _url_re.match(self.url)
-        videoid = match.group("videoid")
+        videoid = self.match.group("videoid")
+
         api_call = "https://hw.hanime.tv/api/v8/video?id={0}".format(videoid)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0",
@@ -71,4 +66,4 @@ class Piped(Plugin):
                 s = HLSStream(self.session, u)
                 yield q, s
 
-__plugin__ = Piped
+__plugin__ = hanimetv
