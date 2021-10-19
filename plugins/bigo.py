@@ -8,7 +8,7 @@ from streamlink.stream import HLSStream
     r"https?://(?:www\.)?bigo\.tv/([^/]+)$"
 ))
 class Bigo(Plugin):
-    _api_url = "https://bigo.tv/studio/getInternalStudioInfo?siteId={0}"
+    _api_url = "https://ta.bigo.tv/official_website/studio/getInternalStudioInfo"
 
     _post_schema = validate.Schema({
         "code": int,
@@ -33,11 +33,17 @@ class Bigo(Plugin):
         return self.category
 
     def _get_streams(self):
-        res = self.session.http.get(
-            self._api_url.format(self.match.group(1)),
-            allow_redirects=True,
-            headers={"User-Agent": useragents.IPHONE_6}
-        )
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": self.url,
+            "User-Agent": useragents.IPHONE_6
+        }
+
+        post_data = "siteId={0}&verify=".format(self.match.group(1))
+
+        res = self.session.http.post(self._api_url, headers=headers, data=post_data)
+        
         data = self.session.http.json(res, schema=self._post_schema)
 
         if not data:
