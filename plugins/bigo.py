@@ -2,15 +2,16 @@ import re
 
 from streamlink.plugin import Plugin, pluginmatcher
 from streamlink.plugin.api import useragents, validate
-from streamlink.stream import HLSStream
+from streamlink.stream.hls import HLSStream
 
 @pluginmatcher(re.compile(
     r"https?://(?:www\.)?bigo\.tv/([^/]+)$"
 ))
+
 class Bigo(Plugin):
     _api_url = "https://ta.bigo.tv/official_website/studio/getInternalStudioInfo"
 
-    _post_schema = validate.Schema({
+    _data_schema = validate.Schema({
         "code": int,
         "msg": str,
         "data": validate.any({
@@ -18,8 +19,7 @@ class Bigo(Plugin):
             "roomTopic": validate.text,
             "gameTitle": validate.text,
             "alive": int,
-            validate.optional("hls_src"): validate.url(),
-
+            "hls_src": validate.any(None, "", validate.url())
         },[])
     })
 
@@ -44,7 +44,7 @@ class Bigo(Plugin):
 
         res = self.session.http.post(self._api_url, headers=headers, data=post_data)
         
-        data = self.session.http.json(res, schema=self._post_schema)
+        data = self.session.http.json(res, schema=self._data_schema)
 
         if not data:
             self.logger.info("Not a valid url.")
