@@ -38,7 +38,7 @@ class hanimetv(Plugin):
     def _get_streams(self):
         videoid = self.match.group("videoid")
 
-        api_call = "https://hw.hanime.tv/api/v8/video?id={0}".format(videoid)
+        api_call = "https://hanime.tv/api/v8/video?id={0}".format(videoid)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0",
             "Referer": self.url,
@@ -62,7 +62,7 @@ class hanimetv(Plugin):
                 yield q, s
             else:
                 q = "{0}p".format(stream["height"])
-                u = "https://weeb.hanime.tv/weeb-api-cache/api/v8/m3u8s/{0}.m3u8".format(stream["id"])
+                u = "https://hanime.tv/api/v8/m3u8s/{0}.m3u8".format(stream["id"])
                 s = HLSStream(self.session, u)
                 yield q, s
 
