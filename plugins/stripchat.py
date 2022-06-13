@@ -2,9 +2,15 @@ import re
 
 from streamlink.plugin import Plugin, pluginmatcher
 from streamlink.plugin.api import validate
-from streamlink.stream import HLSStream
+from streamlink.stream.hls import HLSStream
 
-_post_schema = validate.Schema({
+@pluginmatcher(re.compile(
+    r"https?://(\w+\.)?stripchat\.com/(?P<username>[a-zA-Z0-9_-]+)"
+))
+
+class Stripchat(Plugin):
+
+    _data_schema = validate.Schema({
         "cam": validate.Schema({
             'streamName' : validate.text,
             'topic' : validate.text,
@@ -16,13 +22,7 @@ _post_schema = validate.Schema({
                 'isLive' : bool
             })
         })
-})
-
-@pluginmatcher(re.compile(
-    r"https?://(\w+\.)?stripchat\.com/(?P<username>[a-zA-Z0-9_-]+)"
-))
-
-class Stripchat(Plugin):
+    })
 
     def get_title(self):
         return self.title
@@ -31,20 +31,20 @@ class Stripchat(Plugin):
         return self.author
 
     def get_category(self):
-        return "Live"
+        return "NSFW LIVE"
 
     def _get_streams(self):
         username = self.match.group("username")
 
-        api_call = "https://stripchat.com/api/front/v2/models/username/{0}/cam".format(username)
+        api_url = "https://stripchat.com/api/front/v2/models/username/{0}/cam".format(username)
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "X-Requested-With": "XMLHttpRequest",
             "Referer": self.url,
         }
 
-        res = self.session.http.get(api_call, headers=headers)
-        data = self.session.http.json(res, schema=_post_schema)
+        res = self.session.http.get(api_url, headers=headers)
+        data = self.session.http.json(res, schema=self._data_schema)
 
         if not data:
             self.logger.info("Not a valid url.")
