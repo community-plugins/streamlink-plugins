@@ -12,13 +12,13 @@ class Stripchat(Plugin):
 
     _data_schema = validate.Schema({
         "cam": validate.Schema({
-            'streamName' : validate.text,
-            'topic' : validate.text,
-            'viewServers': validate.Schema({'flashphoner-hls': validate.text})
+            'streamName' : str,
+            'topic' : str,
+            'viewServers': validate.Schema({'flashphoner-hls': str})
         }),
         "user": validate.Schema({
             'user' : validate.Schema({
-                'status' : validate.text,
+                'status' : str,
                 'isLive' : bool
             })
         })
@@ -53,18 +53,34 @@ class Stripchat(Plugin):
         self.author = username
         self.title = data["cam"]["topic"]
 
-        server = "https://b-{0}.strpst.com/hls/{1}/master_{1}.m3u8".format(data["cam"]["viewServers"]["flashphoner-hls"],data["cam"]["streamName"])
-
-        server0 = "https://b-{0}.strpst.com/hls/{1}/{1}.m3u8".format(data["cam"]["viewServers"]["flashphoner-hls"],data["cam"]["streamName"])
+        server = "https://b-{0}.doppiocdn.com/hls/{1}/master/{1}_auto.m3u8?playlistType=standard".format(data["cam"]["viewServers"]["flashphoner-hls"],data["cam"]["streamName"])
+        server_src = "https://b-{0}.doppiocdn.com/hls/{1}/master/{1}.m3u8?playlistType=standard".format(data["cam"]["viewServers"]["flashphoner-hls"],data["cam"]["streamName"])
+        server0 = "https://edge-hls.doppiocdn.com/hls/{0}/master/{0}_auto.m3u8?playlistType=standard".format(data["cam"]["streamName"])
+        server1 = "https://edge-hls.doppiocdn.org/hls/{0}/master/{0}_auto.m3u8?playlistType=standard".format(data["cam"]["streamName"])
+        server2 = "https://b-{0}.doppiocdn.org/hls/{1}/{1}.m3u8".format(data["cam"]["viewServers"]["flashphoner-hls"],data["cam"]["streamName"])
 
         self.logger.info("Stream status: {0}".format(data["user"]["user"]["status"]))
 
         if (data["user"]["user"]["isLive"] is True and data["user"]["user"]["status"] == "public" and server):
             try:
+                self.logger.info("trying server {0}".format(server))
                 for s in HLSStream.parse_variant_playlist(self.session,server,headers={'Referer': self.url}).items():
                     yield s
+                for s in HLSStream.parse_variant_playlist(self.session,server_src,headers={'Referer': self.url}).items():
+                    yield s
             except IOError as err:
-                stream = HLSStream(self.session, server0)
-                yield "default", stream
+                try:
+                    self.logger.info("trying fallback server {0}".format(server0))
+                    for s in HLSStream.parse_variant_playlist(self.session,server0,headers={'Referer': self.url}).items():
+                        yield s
+                except IOError as err:
+                    try:
+                        self.logger.info("trying another fallback server {0}".format(server1))
+                        for s in HLSStream.parse_variant_playlist(self.session,server1,headers={'Referer': self.url}).items():
+                            yield s
+                    except IOError as err:
+                        self.logger.info("fallback to default stream : {0}".format(server2))
+                        stream = HLSStream(self.session, server2)
+                        yield "auto", stream
 
 __plugin__ = Stripchat
