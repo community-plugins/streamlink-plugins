@@ -3,17 +3,7 @@ import uuid
 
 from streamlink.plugin import Plugin, pluginmatcher
 from streamlink.plugin.api import validate
-from streamlink.stream import HLSStream
-
-API_HLS = "https://chaturbate.com/get_edge_hls_url_ajax/"
-
-_post_schema = validate.Schema(
-    {
-        "url": validate.text,
-        "room_status": validate.text,
-        "success": int
-    }
-)
+from streamlink.stream.hls import HLSStream
 
 @pluginmatcher(re.compile(
     r"https?://(\w+\.)?chaturbate\.com/(?P<username>\w+)"
@@ -21,46 +11,53 @@ _post_schema = validate.Schema(
 
 class Chaturbate(Plugin):
 
+    _data_schema = validate.Schema({
+        "room_status": str,
+        "room_title": str,
+        "broadcaster_username": str,
+        "broadcaster_gender": str,
+        "hls_source": str,
+    })
+
     def get_title(self):
-        return self.author
+        return self.title
 
     def get_author(self):
         return self.author
 
     def get_category(self):
-        return "Live"
+        return "NSFW LIVE"
 
     def _get_streams(self):
         username = self.match.group("username")
 
+        api_url = "https://chaturbate.com/api/chatvideocontext/{0}".format(username)
         CSRFToken = str(uuid.uuid4().hex.upper()[0:32])
-
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "X-CSRFToken": CSRFToken,
             "X-Requested-With": "XMLHttpRequest",
             "Referer": self.url,
         }
-
         cookies = {
             "csrftoken": CSRFToken,
         }
 
-        post_data = "room_slug={0}&bandwidth=high".format(username)
-
-        res = self.session.http.post(API_HLS, headers=headers, cookies=cookies, data=post_data)
-        data = self.session.http.json(res, schema=_post_schema)
+        res = self.session.http.get(api_url, headers=headers, cookies=cookies)
+        data = self.session.http.json(res, schema=self._data_schema)
 
         if not data:
             self.logger.info("Not a valid url.")
             return
 
-        self.author = username
+        self.author = data["broadcaster_username"]
+        self.title = data["room_title"]
+        self.category = data["broadcaster_gender"]
 
         self.logger.info("Stream status: {0}".format(data["room_status"]))
 
-        if (data["success"] is True and data["room_status"] == "public" and data["url"]):
-            for s in HLSStream.parse_variant_playlist(self.session, data["url"]).items():
+        if (data["room_status"] == "public" and data["hls_source"]):
+            for s in HLSStream.parse_variant_playlist(self.session, data["hls_source"]).items():
                 yield s
 
 __plugin__ = Chaturbate
