@@ -1,28 +1,29 @@
 import re
 
-from streamlink.plugin import Plugin, pluginmatcher
+from streamlink.plugin import Plugin
 from streamlink.plugin.api import validate
-from streamlink.stream.hls import HLSStream
+from streamlink.stream import HLSStream
 
-@pluginmatcher(re.compile(
-    r"https?://(\w+\.)?stripchat\.com/(?P<username>[a-zA-Z0-9_-]+)"
-))
+_url_re = re.compile(r"https?://(\w+\.)?stripchat\.com/(?P<username>[a-zA-Z0-9_-]+)")
 
 class Stripchat(Plugin):
-
     _data_schema = validate.Schema({
         "cam": validate.Schema({
-            'streamName' : str,
-            'topic' : str,
-            'viewServers': validate.Schema({'flashphoner-hls': str})
+            'streamName' : validate.text,
+            'topic' : validate.text,
+            'viewServers': validate.Schema({'flashphoner-hls': validate.text})
         }),
         "user": validate.Schema({
             'user' : validate.Schema({
-                'status' : str,
+                'status' : validate.text,
                 'isLive' : bool
             })
         })
     })
+
+    @classmethod
+    def can_handle_url(cls, url):
+        return _url_re.match(url)
 
     def get_title(self):
         return self.title
@@ -34,8 +35,8 @@ class Stripchat(Plugin):
         return "NSFW LIVE"
 
     def _get_streams(self):
-        username = self.match.group("username")
-
+        match = _url_re.match(self.url)
+        username = match.group("username")
         api_url = "https://stripchat.com/api/front/v2/models/username/{0}/cam".format(username)
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
