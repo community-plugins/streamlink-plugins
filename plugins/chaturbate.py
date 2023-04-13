@@ -4,6 +4,7 @@ import uuid
 from streamlink.plugin import Plugin, pluginmatcher
 from streamlink.plugin.api import validate
 from streamlink.stream.hls import HLSStream
+from streamlink.exceptions import PluginError
 
 @pluginmatcher(re.compile(
     r"https?://(\w+\.)?chaturbate\.com/(?P<username>\w+)"
@@ -43,7 +44,16 @@ class Chaturbate(Plugin):
             "csrftoken": CSRFToken,
         }
 
-        res = self.session.http.get(api_url, headers=headers, cookies=cookies)
+        try:
+            res = self.session.http.get(api_url, headers=headers, cookies=cookies)
+        except PluginError:
+            try:
+                self.logger.info("using cloudscraper")
+                import cloudscraper
+                res = cloudscraper.create_scraper().get(api_url, headers=headers)
+            except (PluginError, TypeError) as err:
+                self.logger.debug(err)
+
         data = self.session.http.json(res, schema=self._data_schema)
 
         if not data:
