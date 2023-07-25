@@ -6,14 +6,14 @@ from streamlink.stream import HLSStream
 
 _post_schema = validate.Schema({
         'hentai_video': validate.Schema({
-            'name': validate.text,
+            'name': str,
             'is_visible': bool
             }),
         'videos_manifest': validate.Schema({
             'servers': validate.Schema([{
                 'streams': validate.Schema([{
-                    'height': validate.text,
-                    'url': validate.text,
+                    'height': str,
+                    'url': str,
                     'id': int
                 }])
             }])

@@ -8,11 +8,11 @@ from streamlink.stream import HLSStream, HTTPStream
 _post_schema = validate.Schema({
         'data': validate.Schema({
             'getVideo': validate.Schema({
-                'streamUrl' : validate.text,
-                'directUrl' : validate.text,
-                'title'  : validate.text,
+                'streamUrl' : str,
+                'directUrl' : strt,
+                'title'  : strt,
                 'channel': validate.Schema({
-                    'title' : validate.text,
+                    'title' : strt,
                 })
             })
         })

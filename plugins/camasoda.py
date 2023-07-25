@@ -13,10 +13,10 @@ class Camsoda(Plugin):
 
     _data_schema = validate.Schema(
         {
-            "status": validate.any(int, validate.text),
-            "token": validate.text,
-            "edge_servers": [validate.text],
-            "stream_name": validate.text,
+            "status": validate.any(int, str),
+            "token": str,
+            "edge_servers": [str],
+            "stream_name": str,
         }
     )
 
