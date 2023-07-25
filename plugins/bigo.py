@@ -15,9 +15,9 @@ class Bigo(Plugin):
         "code": int,
         "msg": str,
         "data": validate.any({
-            "nick_name": validate.text,
-            "roomTopic": validate.text,
-            "gameTitle": validate.text,
+            "nick_name": str,
+            "roomTopic": str,
+            "gameTitle": str,
             "alive": int,
             "hls_src": validate.any(None, "", validate.url())
         },[])
